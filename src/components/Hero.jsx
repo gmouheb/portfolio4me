@@ -1,5 +1,6 @@
 export default function Hero({
   eyebrow = "Cloud / DevSecOps Engineer",
+  titleIcon = "",
   title = "Building secure, reliable infrastructure and products.",
   description = "I design scalable systems, automate delivery, and keep security close to the development lifecycle.",
   primaryAction = { label: "View Projects", href: "#projects" },
@@ -15,9 +16,18 @@ export default function Hero({
           <p className="text-sm font-medium uppercase tracking-[0.3em] text-[var(--secondary)]">
             {eyebrow}
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight text-[var(--text-main)] md:text-6xl">
-            {title}
-          </h1>
+          <div className="flex items-start justify-between gap-6">
+            <h1 className="text-4xl font-semibold tracking-tight text-[var(--text-main)] md:text-6xl">
+              {title}
+            </h1>
+            {titleIcon ? (
+              <img
+                src={titleIcon}
+                alt="MG logo"
+                className="h-20 w-20 shrink-0 object-contain md:h-28 md:w-28"
+              />
+            ) : null}
+          </div>
           <p className="max-w-2xl text-lg leading-8 text-[var(--text-muted)]">
             {description}
           </p>

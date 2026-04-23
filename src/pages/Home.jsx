@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import logoUrl from "../assets/MG_Logo.png";
 import About from "../components/About";
 import Blogs from "../components/Blogs";
 import Contact from "../components/Contact";
@@ -80,6 +81,31 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const pageTitle = portfolio.profile.name?.trim()
+      ? `${portfolio.profile.name} | ${portfolio.profile.title || "Cloud / DevSecOps Engineer"}`
+      : "MG | Cloud / DevSecOps Engineer";
+
+    document.title = pageTitle;
+
+    let favicon = document.querySelector("link[rel='icon']");
+    const created = !favicon;
+
+    if (!favicon) {
+      favicon = document.createElement("link");
+      favicon.setAttribute("rel", "icon");
+      document.head.appendChild(favicon);
+    }
+
+    favicon.setAttribute("href", logoUrl);
+
+    return () => {
+      if (created) {
+        favicon.remove();
+      }
+    };
+  }, [portfolio.profile.name, portfolio.profile.title]);
+
   const hasAbout = Boolean(
     portfolio.profile.about?.trim() || portfolio.profile.highlights?.length,
   );
@@ -113,7 +139,8 @@ export default function Home() {
       />
       <main>
         <Hero
-          eyebrow={portfolio.profile.name || "Portfolio"}
+          eyebrow={portfolio.profile.title || "Cloud / DevSecOps Engineer"}
+          titleIcon={logoUrl}
           title={portfolio.profile.tagline || "Cloud and DevOps engineering focused on reliable platforms."}
           description={
             portfolio.profile.title

@@ -4,17 +4,17 @@ This document describes how to deploy `portfolio4me` in production.
 
 ## Production Architecture
 
-Recommended layout:
+Recommended layout for your setup:
 
 - `web`: nginx container serving the built Vite frontend
 - `api`: Node.js/Express container
-- `mongo`: MongoDB container
-- persistent Docker volumes for MongoDB data and uploaded images
+- MongoDB Atlas as the external database
+- persistent Docker volume for uploaded images
 
 Public traffic flow:
 
 ```text
-Browser -> nginx (web) -> /api/* -> Express API -> MongoDB
+Browser -> nginx (web) -> /api/* -> Express API -> MongoDB Atlas
                       -> /uploads/* -> Express API static uploads
                       -> /* -> Vite build files
 ```
@@ -26,7 +26,7 @@ Browser -> nginx (web) -> /api/* -> Express API -> MongoDB
 - Docker Compose plugin
 - A domain name pointed to the server
 - Ports `80` and optionally `443` open in the firewall
-- A valid Gmail account with an App Password for reset emails
+- Your existing SMTP configuration, unchanged
 
 ## Required Files
 
@@ -42,10 +42,12 @@ Create these on the server:
 
 ## Environment Variables
 
-Create `.env` in the project root:
+Create `.env` in the project root.
+
+Keep SMTP exactly as it already works today, and keep using your MongoDB Atlas URI:
 
 ```env
-MONGODB_URI=mongodb://mongo:27017/portfolio
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/portfolio?retryWrites=true&w=majority
 PORT=5000
 CLIENT_URL=https://your-domain.com
 VITE_API_BASE_URL=/api
@@ -53,9 +55,9 @@ JWT_SECRET=replace-with-a-long-random-secret
 ADMIN_USERNAME=portfolio_admin
 ADMIN_PASSWORD=replace-with-a-strong-password
 ADMIN_EMAIL=admin@your-domain.com
-SMTP_FROM=your-gmail@gmail.com
-SMTP_APP_PASSWORD=your-gmail-app-password
-SMTP_APP_NAME=portfolio4me
+SMTP_FROM=your-existing-smtp-from-value
+SMTP_APP_PASSWORD=your-existing-smtp-app-password
+SMTP_APP_NAME=your-existing-smtp-app-name
 APP_URL=https://your-domain.com
 RESET_TOKEN_EXPIRES=15m
 ```
@@ -64,7 +66,8 @@ Notes:
 
 - `CLIENT_URL` must match the public frontend origin.
 - `APP_URL` is used in password reset links.
-- `MONGODB_URI` should be `mongodb://mongo:27017/portfolio` when using the included Compose production stack.
+- `MONGODB_URI` should stay your MongoDB Atlas connection string.
+- Do not replace your SMTP settings if they already work.
 - The backend will fail to start if SMTP settings are invalid.
 
 ## Deployment Steps
@@ -103,7 +106,6 @@ docker compose --profile prod up --build -d
 
 This starts:
 
-- `mongo`
 - `api`
 - `web`
 
@@ -238,26 +240,41 @@ docker compose --profile prod down -v
 
 Be careful: `-v` also removes MongoDB data and uploaded images.
 
+## MongoDB Atlas
+
+You said you want to keep using MongoDB Atlas. That is the right production choice here.
+
+Use your Atlas URI in `.env`, for example:
+
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/portfolio?retryWrites=true&w=majority
+```
+
+Make sure Atlas network access allows connections from your Lightsail server.
+
+You will typically need one of these:
+
+- allow the Lightsail public IP in Atlas network access
+- or temporarily allow `0.0.0.0/0` while testing, then tighten it later
+
 ## Persistent Data
 
-The production stack stores data in Docker volumes:
+The production stack stores uploaded files in Docker volumes:
 
-- `mongo-data`: MongoDB database files
 - `uploads-data`: uploaded images
 
-These survive normal container restarts and `docker compose down`.
+Uploaded files survive normal container restarts and `docker compose down`.
 
 ## Backup Recommendations
 
 Back up at least:
 
-- MongoDB data
+- MongoDB Atlas data
 - uploaded images
 - `.env`
 
 Minimum backup targets:
 
-- `mongo-data`
 - `uploads-data`
 - deployment configuration and secrets
 
@@ -269,7 +286,7 @@ Usually caused by one of these:
 
 - invalid `MONGODB_URI`
 - missing `JWT_SECRET`
-- invalid Gmail SMTP credentials
+- invalid SMTP credentials
 - `CLIENT_URL` or `APP_URL` not set correctly
 
 Check:
@@ -284,7 +301,7 @@ Check:
 
 - `SMTP_FROM`
 - `SMTP_APP_PASSWORD`
-- Gmail App Password configuration
+- your existing SMTP/App Password configuration
 
 ### Frontend loads but API calls fail
 
@@ -314,7 +331,7 @@ If deploying on AWS Lightsail:
 - point your domain DNS to the instance
 - deploy the project under `/opt/portfolio4me`
 
-The included Docker production flow works well on a single Lightsail instance.
+The included Docker production flow works well on a single Lightsail instance, even when MongoDB is hosted in Atlas.
 
 ## Recommended First Production Test
 
