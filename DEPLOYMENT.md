@@ -6,17 +6,19 @@ This document describes how to deploy `portfolio4me` in production.
 
 Recommended layout for your setup:
 
-- `web`: nginx container serving the built Vite frontend
+- `web`: nginx container serving the built Vite frontend on `127.0.0.1:8080`
 - `api`: Node.js/Express container
+- host nginx handling public HTTP/HTTPS and reverse proxying to the `web` container
 - MongoDB Atlas as the external database
 - persistent Docker volume for uploaded images
 
 Public traffic flow:
 
 ```text
-Browser -> nginx (web) -> /api/* -> Express API -> MongoDB Atlas
-                      -> /uploads/* -> Express API static uploads
-                      -> /* -> Vite build files
+Browser -> host nginx (80/443) -> web container (127.0.0.1:8080)
+                               -> /api/* -> Express API -> MongoDB Atlas
+                               -> /uploads/* -> Express API static uploads
+                               -> /* -> Vite build files
 ```
 
 ## Prerequisites
@@ -25,7 +27,7 @@ Browser -> nginx (web) -> /api/* -> Express API -> MongoDB Atlas
 - Docker
 - Docker Compose plugin
 - A domain name pointed to the server
-- Ports `80` and optionally `443` open in the firewall
+- Ports `80` and `443` open in the firewall
 - Your existing SMTP configuration, unchanged
 
 ## Required Files
@@ -35,6 +37,7 @@ The repo already includes:
 - `Dockerfile`
 - `docker-compose.yaml`
 - `docker/nginx.conf`
+- `deploy/nginx/portfolio4me.conf.example`
 
 Create these on the server:
 
@@ -49,16 +52,16 @@ Keep SMTP exactly as it already works today, and keep using your MongoDB Atlas U
 ```env
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/portfolio?retryWrites=true&w=majority
 PORT=5000
-CLIENT_URL=https://your-domain.com
+CLIENT_URL=https://mouhebgh.com
 VITE_API_BASE_URL=/api
 JWT_SECRET=replace-with-a-long-random-secret
 ADMIN_USERNAME=portfolio_admin
 ADMIN_PASSWORD=replace-with-a-strong-password
-ADMIN_EMAIL=admin@your-domain.com
+ADMIN_EMAIL=admin@mouhebgh.com
 SMTP_FROM=your-existing-smtp-from-value
 SMTP_APP_PASSWORD=your-existing-smtp-app-password
 SMTP_APP_NAME=your-existing-smtp-app-name
-APP_URL=https://your-domain.com
+APP_URL=https://mouhebgh.com
 RESET_TOKEN_EXPIRES=15m
 ```
 
@@ -69,6 +72,17 @@ Notes:
 - `MONGODB_URI` should stay your MongoDB Atlas connection string.
 - Do not replace your SMTP settings if they already work.
 - The backend will fail to start if SMTP settings are invalid.
+
+## DNS for `mouhebgh.com`
+
+Point the domain to your server before requesting the certificate.
+
+Use these records at your DNS provider:
+
+- `A` record for `@` -> `51.45.42.247`
+- `A` record for `www` -> `51.45.42.247`
+
+If your DNS zone already has `AAAA` records for `@` or `www` and you are not serving IPv6 on this host, remove them to avoid partial failures over IPv6.
 
 ## Deployment Steps
 
@@ -98,6 +112,13 @@ cp .env.example .env
 
 Then update the variables for your real domain, secrets, and mail credentials.
 
+For this deployment, set:
+
+```env
+CLIENT_URL=https://mouhebgh.com
+APP_URL=https://mouhebgh.com
+```
+
 ### 4. Start the production stack
 
 ```bash
@@ -109,7 +130,47 @@ This starts:
 - `api`
 - `web`
 
-### 5. Verify the deployment
+The `web` container is published only on `127.0.0.1:8080` for use behind host nginx.
+
+### 5. Configure host nginx
+
+Install nginx and Certbot on the host:
+
+```bash
+sudo apt update
+sudo apt install -y nginx certbot python3-certbot-nginx
+```
+
+Copy the example config into nginx sites:
+
+```bash
+sudo cp deploy/nginx/portfolio4me.conf.example /etc/nginx/sites-available/portfolio4me
+```
+
+The included example is already prepared for:
+
+- `mouhebgh.com`
+- `www.mouhebgh.com`
+
+Enable the site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/portfolio4me /etc/nginx/sites-enabled/portfolio4me
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 6. Issue the TLS certificate
+
+Once your DNS points at the server and ports `80` and `443` are open:
+
+```bash
+sudo certbot --nginx -d mouhebgh.com -d www.mouhebgh.com
+```
+
+Certbot will update the nginx config with the correct certificate paths if needed.
+
+### 7. Verify the deployment
 
 Check containers:
 
@@ -136,17 +197,17 @@ Expected response:
 { "ok": true }
 ```
 
-### 6. Access the application
+### 8. Access the application
 
-If you expose nginx directly from Compose:
+Before DNS and HTTPS are ready, you can still test the container locally on the server:
 
-- Frontend: `http://your-server:8080`
-- API: `http://your-server:8080/api`
+- Frontend: `http://127.0.0.1:8080`
+- API: `http://127.0.0.1:8080/api`
 
-If you place a reverse proxy in front of it:
+Once host nginx and TLS are ready:
 
-- Frontend: `https://your-domain.com`
-- API: `https://your-domain.com/api`
+- Frontend: `https://mouhebgh.com`
+- API: `https://mouhebgh.com/api`
 
 Admin login:
 
@@ -154,34 +215,15 @@ Admin login:
 
 ## Domain and Reverse Proxy
 
-The included Compose setup exposes nginx on port `8080`.
-
-For a real deployment, you usually want one of these:
-
-### Option 1: map nginx directly to port 80
-
-Edit `docker-compose.yaml`:
-
-```yaml
-web:
-  ports:
-    - "80:80"
-```
-
-Then restart:
-
-```bash
-docker compose --profile prod up --build -d
-```
-
-### Option 2: keep `8080` and use a host nginx reverse proxy
+The included Compose setup is intended to stay behind host nginx. The production `web`
+container is exposed only on `127.0.0.1:8080`.
 
 Host nginx example:
 
 ```nginx
 server {
   listen 80;
-  server_name your-domain.com;
+  server_name mouhebgh.com www.mouhebgh.com;
 
   location / {
     proxy_pass http://127.0.0.1:8080;
@@ -194,7 +236,8 @@ server {
 }
 ```
 
-This approach is useful if you want TLS termination and certificate management on the host.
+This is the recommended approach because TLS termination and certificate management stay on
+the host, not inside the app containers.
 
 ## HTTPS
 
@@ -203,12 +246,12 @@ Use HTTPS in production.
 Common approaches:
 
 - use host nginx + Certbot
-- use a cloud load balancer or proxy in front of the server
+- or use a cloud load balancer or proxy in front of the server
 
 If TLS is terminated upstream, keep these values aligned:
 
-- `CLIENT_URL=https://your-domain.com`
-- `APP_URL=https://your-domain.com`
+- `CLIENT_URL=https://mouhebgh.com`
+- `APP_URL=https://mouhebgh.com`
 
 ## Updating the App
 

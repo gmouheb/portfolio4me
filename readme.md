@@ -168,7 +168,6 @@ NODE_ENV=production npm run server
 
 The `prod` profile starts:
 
-- `mongo`
 - `api`
 - `web`
 
@@ -183,6 +182,15 @@ Open:
 - App: `http://localhost:8080`
 - API through nginx: `http://localhost:8080/api`
 - Direct backend port: `http://localhost:5000`
+
+For public deployment behind host nginx with HTTPS, use:
+
+- domain: `mouhebgh.com`
+- server IP: `51.45.42.247`
+- `@` -> `51.45.42.247`
+- `www` -> `51.45.42.247`
+
+Then follow [DEPLOYMENT.md](/home/mouheb/portfolio4me/DEPLOYMENT.md).
 
 Stop:
 

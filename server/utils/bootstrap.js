@@ -19,9 +19,8 @@ export async function ensureAdminUser() {
   if (existingUser) {
     existingUser.username = env.adminUsername;
     existingUser.email = env.adminEmail;
-    existingUser.password = await bcrypt.hash(env.adminPassword, 10);
     await existingUser.save();
-    console.log(`Updated bootstrap admin user "${env.adminUsername}"`);
+    console.log(`Updated bootstrap admin identity "${env.adminUsername}" without changing the existing password`);
     return;
   }
 

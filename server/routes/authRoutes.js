@@ -131,10 +131,18 @@ router.post("/forgot-password", forgotPasswordRateLimit, async (req, res, next) 
         resetUrl,
       });
     } catch (mailError) {
+      console.error("Failed to send reset password email", {
+        email: user.email,
+        message: mailError?.message,
+        code: mailError?.code,
+        response: mailError?.response,
+      });
       user.resetPasswordToken = null;
       user.resetPasswordExpiresAt = null;
       await user.save();
-      return next(mailError);
+      return res.status(503).json({
+        message: "Password reset email is temporarily unavailable. Check SMTP configuration.",
+      });
     }
 
     return res.json({
