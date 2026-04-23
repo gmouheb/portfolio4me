@@ -114,6 +114,14 @@ Only request a certificate for `www` if that DNS record exists.
 
 ## 7. Create Host nginx Config
 
+Important:
+
+- Start with HTTP only on port `80`
+- Do not add the `443` server block yet
+- Do not paste explanatory text into the nginx file
+- First make sure nginx starts successfully with the HTTP-only config
+- Only add the final `443` HTTPS block after Certbot succeeds
+
 Create `/etc/nginx/sites-available/portfolio4me` with:
 
 ```nginx
@@ -171,6 +179,18 @@ Docker should only expose:
 
 ## 10. Request HTTPS Certificate
 
+At this point, nginx should still be HTTP-only.
+
+Before running Certbot, verify:
+
+```bash
+sudo nginx -t
+sudo systemctl restart nginx
+curl -I http://mouhebgh.com
+```
+
+Only continue if HTTP works first.
+
 If only root domain exists:
 
 ```bash
@@ -184,6 +204,10 @@ sudo certbot --nginx -d mouhebgh.com -d www.mouhebgh.com
 ```
 
 ## 11. Replace nginx With Final HTTPS Config
+
+Only do this step after Certbot succeeds.
+
+This is the point where you add port `443`.
 
 Use this content in `/etc/nginx/sites-available/portfolio4me`:
 
