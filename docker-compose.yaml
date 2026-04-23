@@ -1,0 +1,92 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  api-dev:
+    build:
+      context: .
+      target: backend-dev
+    profiles: ["dev"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/portfolio
+      CLIENT_URL: http://localhost:5173
+      APP_URL: http://localhost:5173
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - backend-node-modules:/app/node_modules
+      - uploads-data:/app/uploads
+
+  web-dev:
+    build:
+      context: .
+      target: frontend-dev
+    profiles: ["dev"]
+    depends_on:
+      - api-dev
+    environment:
+      VITE_PROXY_TARGET: http://api-dev:5000
+      VITE_API_BASE_URL: /api
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - frontend-node-modules:/app/node_modules
+
+  api:
+    build:
+      context: .
+      target: backend-prod
+    profiles: ["prod"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/portfolio
+      CLIENT_URL: http://localhost:8080
+      APP_URL: http://localhost:8080
+    ports:
+      - "5000:5000"
+    volumes:
+      - uploads-data:/app/uploads
+
+  web:
+    build:
+      context: .
+      target: frontend-prod
+      args:
+        VITE_API_BASE_URL: /api
+    profiles: ["prod"]
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  mongo-data:
+  backend-node-modules:
+  frontend-node-modules:
+  uploads-data:
