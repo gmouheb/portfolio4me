@@ -17,10 +17,19 @@ export async function ensureAdminUser() {
   const existingUser = userByUsername || userByEmail;
 
   if (existingUser) {
+    const usernameChanged = existingUser.username !== env.adminUsername;
+    const emailChanged = existingUser.email !== env.adminEmail;
+
     existingUser.username = env.adminUsername;
     existingUser.email = env.adminEmail;
-    await existingUser.save();
-    console.log(`Updated bootstrap admin identity "${env.adminUsername}" without changing the existing password`);
+
+    if (usernameChanged || emailChanged) {
+      await existingUser.save();
+      console.log(`Updated bootstrap admin user identity "${env.adminUsername}"`);
+    } else {
+      console.log(`Bootstrap admin user "${env.adminUsername}" already exists`);
+    }
+
     return;
   }
 

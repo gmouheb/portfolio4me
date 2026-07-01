@@ -10,28 +10,25 @@ import { ensureAdminUser } from "./utils/bootstrap.js";
 import { verifyMailerTransport } from "./utils/mailer.js";
 
 const app = express();
-function normalizeOrigin(origin) {
-  return origin?.trim().replace(/\/+$/, "");
-}
-
-const allowedOrigins = new Set(
-  [
-    ...env.corsOrigins,
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:5175",
-    "http://127.0.0.1:5175",
-  ]
-    .map(normalizeOrigin)
-    .filter(Boolean),
-);
+const allowedOrigins = new Set([
+  env.clientUrl,
+  env.appUrl,
+  "http://mouhebgh.com",
+  "https://mouhebgh.com",
+  "http://www.mouhebgh.com",
+  "https://www.mouhebgh.com",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5175",
+].filter(Boolean));
 
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
+      if (!origin || allowedOrigins.has(origin)) {
         callback(null, true);
         return;
       }

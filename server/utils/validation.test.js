@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseResetExpiryMs } from "../config/env.js";
+import { firstListValue, parseListEnv, parseResetExpiryMs } from "../config/env.js";
 import { parseCookies } from "./cookies.js";
 import {
   normalizeEmail,
@@ -42,4 +42,17 @@ test("parseResetExpiryMs supports minutes and hours", () => {
   assert.equal(parseResetExpiryMs("15m"), 15 * 60 * 1000);
   assert.equal(parseResetExpiryMs("2h"), 2 * 60 * 60 * 1000);
   assert.throws(() => parseResetExpiryMs("15"), /RESET_TOKEN_EXPIRES/);
+});
+
+
+test("parseListEnv trims comma-separated values", () => {
+  assert.deepEqual(parseListEnv(" https://example.com, https://www.example.com ,, "), [
+    "https://example.com",
+    "https://www.example.com",
+  ]);
+});
+
+test("firstListValue returns the first configured value or fallback", () => {
+  assert.equal(firstListValue(" https://example.com, https://www.example.com ", "http://localhost:5173"), "https://example.com");
+  assert.equal(firstListValue("", "http://localhost:5173"), "http://localhost:5173");
 });

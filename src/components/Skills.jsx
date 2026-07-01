@@ -26,11 +26,7 @@ export default function Skills({ groups = [] }) {
           </p>
           <h2 className="mt-4 text-3xl font-semibold text-[var(--text-main)]">Skills</h2>
         </div>
-        <p className="max-w-xl text-sm leading-7 text-[var(--text-subtle)]">
-          Small, reusable groups make this section easy to adapt for static data
-          now and API data later.
-        </p>
-      </div>
+    </div>
 
       <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {groups.map((group) => (

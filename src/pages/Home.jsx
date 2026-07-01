@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import logoUrl from "../assets/MG_Logo.png";
+import logoUrl from "../assets/MG_Logo-nobg.png";
 import About from "../components/About";
 import Blogs from "../components/Blogs";
 import Contact from "../components/Contact";

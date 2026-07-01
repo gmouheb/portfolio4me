@@ -388,7 +388,7 @@ Body:
 
 ```json
 {
-  "username": "string, required",
+  "username": "string, required, admin username or email",
   "password": "string, required"
 }
 ```
@@ -405,7 +405,7 @@ Success response:
 
 Error responses:
 
-- `400`: username or password missing
+- `400`: username/email or password missing
 - `401`: invalid credentials
 
 #### `GET /api/auth/me`

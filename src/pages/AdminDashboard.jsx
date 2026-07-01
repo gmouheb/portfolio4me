@@ -570,6 +570,28 @@ export default function AdminDashboard() {
           </aside>
 
           <main className="min-w-0 flex-1 space-y-6">
+            <section className="rounded-[1.5rem] border border-[var(--border)] bg-[color:var(--bg-card)] px-4 py-4 shadow-xl shadow-slate-200/30 dark:shadow-slate-950/40 lg:hidden">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-[0.28em] text-[var(--secondary)]">Control Room</p>
+                  <p className="mt-2 truncate text-sm font-medium text-[var(--text-main)]">{username}</p>
+                  <p className="text-xs text-[var(--text-subtle)]">Authenticated editor</p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <ThemeToggle compact />
+                  <TableActionButton tone="ghost" onClick={() => navigate("/")}>
+                    View site
+                  </TableActionButton>
+                  <TableActionButton tone="danger" onClick={logout}>
+                    <span className="inline-flex items-center gap-1">
+                      <LogOut className="h-3.5 w-3.5" />
+                      Logout
+                    </span>
+                  </TableActionButton>
+                </div>
+              </div>
+            </section>
+
             <section
               id="overview"
               className="rounded-[2rem] border border-[var(--border)] bg-[color:var(--bg-card)] px-6 py-6 shadow-xl shadow-slate-200/30 dark:shadow-slate-950/40"

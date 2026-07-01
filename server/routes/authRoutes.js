@@ -18,10 +18,14 @@ const forgotPasswordRateLimit = createRateLimiter({
 });
 
 function getCookieOptions() {
+  const sameSite = ["lax", "strict", "none"].includes(env.cookieSameSite)
+    ? env.cookieSameSite
+    : "lax";
+
   return {
     httpOnly: true,
-    sameSite: "strict",
-    secure: env.isProduction,
+    sameSite,
+    secure: sameSite === "none" ? true : env.cookieSecure,
     path: "/",
     maxAge: 24 * 60 * 60 * 1000,
   };
@@ -29,14 +33,19 @@ function getCookieOptions() {
 
 router.post("/login", loginRateLimit, async (req, res, next) => {
   try {
-    const username = typeof req.body.username === "string" ? req.body.username.trim() : "";
+    const identifier = typeof req.body.username === "string" ? req.body.username.trim() : "";
     const password = typeof req.body.password === "string" ? req.body.password : "";
 
-    if (!username || !password) {
-      return res.status(400).json({ message: "Username and password are required" });
+    if (!identifier || !password) {
+      return res.status(400).json({ message: "Username/email and password are required" });
     }
 
-    const user = await User.findOne({ username }).lean();
+    const user = await User.findOne({
+      $or: [
+        { username: identifier },
+        { email: identifier.toLowerCase() },
+      ],
+    }).lean();
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -194,3 +203,4 @@ router.post("/reset-password", async (req, res, next) => {
 });
 
 export default router;
+

@@ -99,10 +99,10 @@ export default function AdminLogin() {
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <Field
-              label="Username"
+              label="Username or Email"
               value={form.username}
               onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
-              placeholder="admin"
+              placeholder="admin or admin@example.com"
             />
             <Field
               label="Password"
